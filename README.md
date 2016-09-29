@@ -1,18 +1,18 @@
-Chisel Project Template
+DSP Project Template
 =======================
 
 You've done the chisel [tutorials](https://github.com/ucb-bar/chisel-tutorial.git), and now you 
-are ready to start your own chisel project.  The following procedure should get you started
-with a clean running [Chisel3](https://github.com/ucb-bar/chisel3.git) project.
+are ready to start your own dsp project.  The following procedure should get you started
+with a clean running [dsptools](https://github.com/ucb-bar/dsptools.git) project.
 
-## Make your own Chisel3 project
+## Make your own DSP project
 ### How to get started
-The first thing you want to do is clone this repo into a directory of your own.  I'd recommend creating a chisel projects directory somewhere
+The first thing you want to do is clone this repo into a directory of your own.  I'd recommend creating a dsp projects directory somewhere
 ```sh
-mkdir ~/ChiselProjects
-cd ~/ChiselProjects
+mkdir ~/DspProjects
+cd ~/DspProjects
 
-git clone https://github.com/ucb-bar/chisel-template.git MyChiselProject
+git clone https://github.com/ucb-art/dsp-template.git MyChiselProject
 cd MyChiselProject
 ```
 ### Make your project into a fresh git repo
@@ -22,7 +22,7 @@ There may be more elegant way to do it, but the following works for me. **Note:*
 rm -rf .git
 git init
 git add .gitignore *
-git commit -m 'Starting MyChiselProject'
+git commit -m 'Starting MyDspProject'
 ```
 Connecting this up to github or some other remote host is an exercise left to the reader.
 ### Did it work?
@@ -64,7 +64,7 @@ You are ready to go. We have a few recommended practices and things to do.
 * Change your README.md
 
 ## Development/Bug Fixes
-This is the release version of chisel-template. If you have bug fixes or
+This is the release version of dsp-template. If you have bug fixes or
 changes you would like to see incorporated in this repo, please checkout
 the master branch and submit pull requests against it.
 
