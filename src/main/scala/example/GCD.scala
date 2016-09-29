@@ -20,3 +20,10 @@ class GCD extends Module {
   io.z := x
   io.v := y === UInt(0)
 }
+
+object test {
+  def main(args: Array[String]): Unit = {
+    val gen = () => new GCD
+    chiselMain.run(args.drop(2), gen)
+  }
+}
