@@ -12,9 +12,22 @@ The first thing you want to do is clone this repo into a directory of your own. 
 mkdir ~/DspProjects
 cd ~/DspProjects
 
-git clone https://github.com/ucb-art/dsp-template.git MyChiselProject
+git clone --recursive -j8 https://github.com/ucb-art/dsp-template.git MyChiselProject
 cd MyChiselProject
 ```
+
+The `--recursive`` option makes sure to check out all the submodules needed for this project.
+
+The next step is to build and install all the dependencies. Run the following from MyChiselProject/
+
+```
+cd dsp-framework && . ./update.bash
+```
+
+It should build and install the needed dependencies without error, and then run `sbt test` on the dsp-tools project.
+Some of the tests may fail- as of current writing, don't be surprised if you see PFBSpec, BaseNSpec, or ParameterizedSaturatingAdderSpec fail.
+If you see BlackBoxFloatSpec fail, you probably do not have verilator installed and should [follow instructions here](https://github.com/ucb-bar/chisel3) under the 'Install Verilator' heading.
+
 ### Make your project into a fresh git repo
 There may be more elegant way to do it, but the following works for me. **Note:** this project comes with a magnificent 339 line (at this writing) .gitignore file.
  You may want to edit that first in case we missed something, whack away at it, or start it from scratch.
