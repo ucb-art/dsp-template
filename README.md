@@ -21,7 +21,7 @@ The `--recursive`` option makes sure to check out all the submodules needed for 
 The next step is to build and install all the dependencies. Run the following from MyChiselProject/
 
 ```
-cd dsp-framework && . ./update.sh
+cd dsp-framework && . ./update.bash
 ```
 
 It should build and install the needed dependencies without error, and then run `sbt test` on the dsp-tools project.
