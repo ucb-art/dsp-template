@@ -19,7 +19,11 @@ cd MyChiselProject
 The `--recursive`` option makes sure to check out all the submodules needed for this project.
 
 The next step is to build and install all the dependencies. Run the following from MyChiselProject/
-```cd dsp-framework && . ./update.sh```
+
+```
+cd dsp-framework && . ./update.sh
+```
+
 It should build and install the needed dependencies without error, and then run `sbt test` on the dsp-tools project.
 Some of the tests may fail- as of current writing, don't be surprised if you see PFBSpec, BaseNSpec, or ParameterizedSaturatingAdderSpec fail.
 If you see BlackBoxFloatSpec fail, you probably do not have verilator installed and should [follow instructions here](https://github.com/ucb-bar/chisel3) under the 'Install Verilator' heading.
