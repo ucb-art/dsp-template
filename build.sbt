@@ -11,12 +11,12 @@ resolvers ++= Seq(
 
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 val defaultVersions = Map(
-  "dsp-tools" -> "1.0",
+  "dsptools" -> "1.0",
   "chisel3" -> "3.1-SNAPSHOT",
   "chisel-iotesters" -> "1.2-SNAPSHOT"
   )
 
-libraryDependencies ++= Seq("chisel3","chisel-iotesters").map {
+libraryDependencies ++= Seq("dsptools", "chisel3","chisel-iotesters").map {
   dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep)) }
 
 libraryDependencies += "org.spire-math" %% "spire" % "0.11.0"
