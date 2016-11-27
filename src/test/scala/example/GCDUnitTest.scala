@@ -20,13 +20,13 @@ class GCDTester(c: GCD, a: Int, b: Int, z: Int) extends DspTester(c) {
 class GCDSpec extends FlatSpec with Matchers {
 
   //TODO: use generators and this function to make z's
-  def gcd(a: Int, b: Int): Int = if(b == 0) a else gcd(b, a%b)
+  def gcd(a: Int, b: Int): Int = if(b == 0) a else gcd(b, a % b)
 
   val gcds = Seq((64, 48), (12, 9), (48, 64))
 
   behavior of "GCD"
   it should "greatly find the denominator in common" in {
-    for ((a, b) <- gcds) { 
+    for ((a, b) <- gcds) {
       val z = gcd(a, b)
       chisel3.iotesters.Driver(() => new GCD) { c => new GCDTester(c, a, b, z) } should be (true)
     }
