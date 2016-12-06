@@ -32,7 +32,7 @@ class DspConfig extends Config(
     }}
     case FIRKey => { (q: Parameters) => { 
       implicit val p = q
-      FIRConfig[DspReal](numberOfTaps = 4)
+      FIRConfig[DspReal](numberOfTaps = 4, pipelineDepth = 0)
     }}
 	  case NastiKey => NastiParameters(64, 32, 1)
     case PAddrBits => 32
@@ -68,9 +68,10 @@ trait HasFIRGenParameters[T <: Data] extends HasGenParameters[T, T] {
    def genTap: Option[T] = None
 }
 
-case class FIRConfig[T<:Data:Real](val numberOfTaps: Int)(implicit val p: Parameters) extends HasFIRGenParameters[T] {
+case class FIRConfig[T<:Data:Real](val numberOfTaps: Int, val pipelineDepth: Int)(implicit val p: Parameters) extends HasFIRGenParameters[T] {
   // sanity checks
   require(lanesIn%lanesOut == 0, "Decimation amount must be an integer.")
   require(lanesOut <= lanesIn, "Cannot have more output lanes than input lanes.")
+  require(pipelineDepth >= 0, "Must have positive pipelining")
 }
 

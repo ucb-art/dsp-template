@@ -20,12 +20,19 @@ class FIR[T<:Data:Real]()(implicit val p: Parameters) extends Module with HasFIR
   val io = IO(new FIRIO[T])
   val config = p(FIRKey)(p)
 
-  // TODO
-  io.out.sync := io.in.sync
-  io.out.valid := io.in.valid
+  // define the latency as the slowest output
+  val latency = ceil(config.numberOfTaps/lanesIn).toInt + config.pipelineDepth
+  io.out.sync := ShiftRegister(io.in.sync, latency)
+  io.out.valid := ShiftRegister(io.in.valid, latency)
 
-  val products = io.taps.reverse.map { tap => io.in.bits.map { in => in * tap }}
+  val products = io.taps.reverse.map { tap => io.in.bits.map { in => 
+    in * tap
+    //when (io.in.valid) { in * tap }
+    //.otherwise { Wire(implicitly[Real[T]].zero) }
+  }}
 
+  // rotates a Seq by i terms, wraps around and can be negative for reverse rotation
+  // e.g. (1,2,3) rotate by 1 = (2,3,1)
   def rotate(l: Seq[T], i: Int): Seq[T] = if(i >= 0) { l.drop(i%l.size) ++ l.take(i%l.size) } else { l.takeRight(-i%l.size) ++ l.dropRight(-i%l.size) }
 
   val last = products.reduceLeft { (left: Seq[T], right: Seq[T]) =>
@@ -34,19 +41,25 @@ class FIR[T<:Data:Real]()(implicit val p: Parameters) extends Module with HasFIR
     right.zip(rotate(left.dropRight(1) :+ reg, -1)).map{case(a, b) => a+b}
   }
 
-  io.out.bits := Vec(last.grouped(lanesIn/lanesOut).map(_.head).toSeq)
+  // all pipeline registers tacked onto end, hopefully synthesis tools handle correctly
+  io.out.bits := ShiftRegister(Vec(last.grouped(lanesIn/lanesOut).map(_.head).toSeq), config.pipelineDepth)
 }
 
-class FIRWrapper[T<:Data:Real]()(implicit p: Parameters) extends GenDspBlock[T, T]()(p) {
+class FIRWrapper[T<:Data:Real]()(implicit p: Parameters) extends GenDspBlock[T, T]()(p) with HasFIRGenParameters[T] {
   val baseAddr = BigInt(0)
   val fir = Module(new FIR[T])
+  val config = p(FIRKey)(p)
 
-  addControl("FIR Coeff", 0.U)
-  addStatus("fftStatus")
+  (0 until config.numberOfTaps).map( i =>
+    addControl(s"firCoeff$i", 0.U)
+  )
+  addStatus("firStatus")
 
   fir.io.in <> unpackInput(lanesIn, genIn())
-  fir.io.in.sync := control("fftControl")(0)
+  val taps = Wire(Vec(config.numberOfTaps, genTap.getOrElse(genIn())))
+  val w = taps.zipWithIndex.map{case (x, i) => x.fromBits(control(s"firCoeff$i"))}
+  fir.io.taps := w
 
   unpackOutput(lanesOut, genOut()) <> fir.io.out
-  status("fftStatus") := fir.io.out.sync
+  status("firStatus") := fir.io.out.sync
 }
