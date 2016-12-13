@@ -40,17 +40,23 @@ class DspConfig extends Config(
     case AmoAluOperandBits => 64
     case TLId => "FIR"
     case TLKey("FIR") =>
-        TileLinkParameters(
-          coherencePolicy = new MICoherence(
-            new NullRepresentation(1)),
-          nManagers = 1,
-          nCachingClients = 0,
-          nCachelessClients = 1,
-          maxClientXacts = 4,
-          maxClientsPerPort = 1,
-          maxManagerXacts = 1,
-          dataBeats = 1,
-          dataBits = 64)
+      site(TLKey("L2toMC")).copy(
+        nCachingClients = 0,
+        nCachelessClients = 1,
+        maxClientXacts = 4,
+        maxClientsPerPort = 1)
+    case TLKey("L2toMC") =>  
+      TileLinkParameters(
+        coherencePolicy = new MEICoherence(
+          new NullRepresentation(2)),
+        nManagers = 1,
+        nCachingClients = 2,
+        nCachelessClients = 0,
+        maxClientXacts = 2 + 2,
+        maxClientsPerPort = 2,
+        maxManagerXacts = 1,
+        dataBeats = 8,
+        dataBits = 64 * 8)
     case DspBlockKey => DspBlockParameters(1024, 1024)
     case GenKey => new GenParameters {
       def getReal(): DspReal = DspReal(0.0).cloneType

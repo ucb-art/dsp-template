@@ -2,10 +2,14 @@
 package fir
 
 import dsptools.numbers.implicits._
+import dsptools.Utilities._
 import dsptools.{DspContext, Grow}
 import spire.algebra.{Field, Ring}
 import breeze.math.{Complex}
 import breeze.linalg._
+import breeze.signal._
+import breeze.signal.support._
+import breeze.signal.support.CanFilter._
 import chisel3._
 import chisel3.util._
 import chisel3.iotesters._
@@ -30,35 +34,54 @@ object LocalTest extends Tag("edu.berkeley.tags.LocalTest")
 
 class FIRWrapperTester[T <: Data](c: FIRWrapper[T])(implicit p: Parameters) extends DspBlockTester(c) {
   val config = p(FIRKey)(p)
+  val gk = p(GenKey)
   val test_length = 10
   
-  // define input datasets here, a Seq of Seqs
-  def rawStreamIn = (0 until test_length).map(x => (x*config.numberOfTaps until (x+1)*config.numberOfTaps).toList)
+  // define input datasets here
+  val input = Array.fill(test_length)(Array.fill(gk.lanesIn)(Random.nextDouble*2-1))
+  def rawStreamIn = input
+  val filter_coeffs = Array.fill(config.numberOfTaps)(Random.nextDouble*2-1)
 
-  def doublesToBigInt(in: List[Int]): BigInt = {
+  def doublesToBigInt(in: Array[Double]): BigInt = {
     in.reverse.foldLeft(BigInt(0)) {case (bi, dbl) =>
       val new_bi = BigInt(java.lang.Double.doubleToLongBits(dbl))
-      (bi << 64) | new_bi
+      (bi << 64) + new_bi
     }
   }
   def streamIn = rawStreamIn.map(doublesToBigInt)
+  println(streamIn.mkString("\n"))
+
+  // use Breeze FIR filter, but trim (it zero pads the input) and decimate output
+  val expected_output = filter(DenseVector(rawStreamIn.flatten), DenseVector(filter_coeffs)).toArray.drop(config.numberOfTaps-2).dropRight(config.numberOfTaps-2).grouped(gk.lanesIn/gk.lanesOut).map(_.head).toArray
 
   pauseStream
-  axiWrite(0, 1)
-  println(peek(c.io.out.sync).toString)
+  //println("Addr Map:")
+  //println(testchipip.SCRAddressMap("FIRWrapper").get.map(_.toString).toString)
+  // assumes coefficients are first addresses
+  filter_coeffs.zipWithIndex.foreach { case(x, i) => axiWrite(i*8, doubleToBigIntBits(x)) }
   step(10)
-  axiWrite(8, 0)
-  println(peek(c.io.out.sync).toString)
   playStream
-  step(10)
-  println(peek(c.io.out.sync).toString)
-  println("Input:")
-  rawStreamIn.foreach{ x => println(x.toString) }
-  println("Output:")
-  streamOut.foreach { x => (0 until 16).foreach { idx => {
+  step(test_length)
+  val output = streamOut.map { x => (0 until gk.lanesOut).map { idx => {
     val y = (x >> (64 * idx)) & 0xFFFFFFFFFFFFFFFFL
-    print(java.lang.Double.longBitsToDouble(y.toLong).toString + " ") }}
-    println()
+    java.lang.Double.longBitsToDouble(y.toLong)
+  }}}
+
+  println("Input")
+  println(rawStreamIn.flatten.deep.mkString(","))
+  println("Coefficients")
+  println(filter_coeffs.deep.mkString(","))
+  println("Chisel Output")
+  println(output.toArray.flatten.deep.mkString(","))
+  println("Reference Output")
+  println(expected_output.deep.mkString(","))
+
+  output.flatten.zip(expected_output).zipWithIndex.foreach { case((chisel, ref), index) => 
+    if (chisel != ref) {
+      val epsilon = 1e-12
+      val err = abs(chisel-ref)/abs(ref+epsilon)
+      //assert(err < epsilon || ref < epsilon, s"Error: mismatch on output $index of ${err*100}%\n\tReference: $ref\n\tChisel:    $chisel")
+    }
   }
 }
 
