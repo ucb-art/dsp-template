@@ -27,3 +27,6 @@ verilog: $(build_dir)/$(PROJECT).$(MODEL).$(CONFIG).v
 
 test:
 	$(SBT) "test"
+
+travis:
+	$(SBT) "test"

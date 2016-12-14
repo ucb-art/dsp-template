@@ -5,5 +5,4 @@ sudo: false
 script:
   - git submodule update --init
   - cd dsp-framework; echo "Publishing the framework, this may take a while..."; ./update.bash; cd ..; make libs > /dev/null/; echo "Done updating!"
-  - sbt travis:test |& sed -e '/LoFirrtl/,/End of dependency graph/d'
-
+  - make travis
