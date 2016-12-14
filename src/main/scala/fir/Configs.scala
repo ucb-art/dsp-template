@@ -20,8 +20,14 @@ import cde._
 import junctions._
 import uncore.tilelink._
 import uncore.coherence._
+import fir.Generator.params
 
 import dsptools._
+import scala.collection.mutable.Map
+
+trait HasIPXACTParameters {
+  def getIPXACTParameters: Map[String, String]
+}
 
 // create a new DSP Configuration
 class DspConfig extends Config(
@@ -40,20 +46,14 @@ class DspConfig extends Config(
     case AmoAluOperandBits => 64
     case TLId => "FIR"
     case TLKey("FIR") =>
-      site(TLKey("L2toMC")).copy(
-        nCachingClients = 0,
-        nCachelessClients = 1,
-        maxClientXacts = 4,
-        maxClientsPerPort = 1)
-    case TLKey("L2toMC") =>  
       TileLinkParameters(
         coherencePolicy = new MEICoherence(
           new NullRepresentation(2)),
         nManagers = 1,
-        nCachingClients = 2,
-        nCachelessClients = 0,
-        maxClientXacts = 2 + 2,
-        maxClientsPerPort = 2,
+        nCachingClients = 0,
+        nCachelessClients = 1,
+        maxClientXacts = 4,
+        maxClientsPerPort = 1,
         maxManagerXacts = 1,
         dataBeats = 8,
         dataBits = 64 * 8)
@@ -66,7 +66,21 @@ class DspConfig extends Config(
       override val lanesOut = 2
     }
     case _ => throw new CDEMatchError
-  })
+  }) with HasIPXACTParameters {
+  def getIPXACTParameters: Map[String, String] = {
+    // Get unadulterated, top level parameters.
+    val parameterList = List[Field[_]](TLId, PAddrBits)
+    val parameterMap = parameterList.foldLeft(Map[String, String]()) { (m, s) => m(s.toString) = params(s).toString; m }
+
+    // Conjure up some IPXACT synthsized parameters.
+    parameterMap ++= List(("InputLanes", params(GenKey).lanesIn.toString), ("OutputLanes", params(GenKey).lanesOut.toString))
+    parameterMap ++= List(("InputTotalBits", params(DspBlockKey).inputWidth.toString))
+
+    parameterMap ++= List(("NumberOfTaps", params(FIRKey)(params).numberOfTaps.toString), ("PipelineDepth", params(FIRKey)(params).pipelineDepth.toString))
+
+    parameterMap
+  }
+}
 
 case object FIRKey extends Field[(Parameters) => FIRConfig[DspReal]]
 

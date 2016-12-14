@@ -49,7 +49,6 @@ class FIRWrapperTester[T <: Data](c: FIRWrapper[T])(implicit p: Parameters) exte
     }
   }
   def streamIn = rawStreamIn.map(doublesToBigInt)
-  println(streamIn.mkString("\n"))
 
   // use Breeze FIR filter, but trim (it zero pads the input) and decimate output
   val expected_output = filter(DenseVector(rawStreamIn.flatten), DenseVector(filter_coeffs)).toArray.drop(config.numberOfTaps-2).dropRight(config.numberOfTaps-2).grouped(gk.lanesIn/gk.lanesOut).map(_.head).toArray
@@ -67,20 +66,20 @@ class FIRWrapperTester[T <: Data](c: FIRWrapper[T])(implicit p: Parameters) exte
     java.lang.Double.longBitsToDouble(y.toLong)
   }}}
 
-  println("Input")
-  println(rawStreamIn.flatten.deep.mkString(","))
-  println("Coefficients")
-  println(filter_coeffs.deep.mkString(","))
-  println("Chisel Output")
-  println(output.toArray.flatten.deep.mkString(","))
-  println("Reference Output")
-  println(expected_output.deep.mkString(","))
+  //println("Input")
+  //println(rawStreamIn.flatten.deep.mkString(","))
+  //println("Coefficients")
+  //println(filter_coeffs.deep.mkString(","))
+  //println("Chisel Output")
+  //println(output.toArray.flatten.deep.mkString(","))
+  //println("Reference Output")
+  //println(expected_output.deep.mkString(","))
 
   output.flatten.zip(expected_output).zipWithIndex.foreach { case((chisel, ref), index) => 
     if (chisel != ref) {
       val epsilon = 1e-12
       val err = abs(chisel-ref)/abs(ref+epsilon)
-      //assert(err < epsilon || ref < epsilon, s"Error: mismatch on output $index of ${err*100}%\n\tReference: $ref\n\tChisel:    $chisel")
+      assert(err < epsilon || ref < epsilon, s"Error: mismatch on output $index of ${err*100}%\n\tReference: $ref\n\tChisel:    $chisel")
     }
   }
 }
