@@ -12,21 +12,22 @@ The first thing you want to do is clone this repo into a directory of your own. 
 mkdir ~/DspProjects
 cd ~/DspProjects
 
-git clone --recursive -j8 https://github.com/ucb-art/dsp-template.git MyChiselProject
+git clone https://github.com/ucb-art/dsp-template.git MyChiselProject
 cd MyChiselProject
 ```
-
-The `--recursive`` option makes sure to check out all the submodules needed for this project.
 
 The next step is to build and install all the dependencies. Run the following from MyChiselProject/
 
 ```
-cd dsp-framework && . ./update.bash
+git submodule update --init
+cd dsp-framework
+./update.bash
+cd ../
+make libs
 ```
 
-It should build and install the needed dependencies without error, and then run `sbt test` on the dsp-tools project.
-Some of the tests may fail- as of current writing, don't be surprised if you see PFBSpec, BaseNSpec, or ParameterizedSaturatingAdderSpec fail.
-If you see BlackBoxFloatSpec fail, you probably do not have verilator installed and should [follow instructions here](https://github.com/ucb-bar/chisel3) under the 'Install Verilator' heading.
+It should build and install the needed dependencies without error.
+If you do not have verilator installed, you should [follow instructions here](https://github.com/ucb-bar/chisel3) under the 'Install Verilator' heading.
 
 ### Make your project into a fresh git repo
 There may be more elegant way to do it, but the following works for me. **Note:** this project comes with a magnificent 339 line (at this writing) .gitignore file.
@@ -43,27 +44,31 @@ You should now have a project based on Chisel3 that can be run.  **Note:** With 
 it is best to execute the following sbt before opening up this directory in your IDE. I have no formal proof of this assertion.
 So go for it, at the command line in the project root.
 ```sh
-sbt test
+make test
 ```
 You should see a whole bunch of output that ends with the following lines
 ```
-STEP 49996 -> 50000
-  EXPECT io_z -> 0x10 == 0x10 PASS
-  EXPECT io_v -> 0x1 == 0x1 PASS
-RAN 50000 CYCLES PASSED
-[info] GCDTester:
-[info] GCD
-[info] - should calculate proper greatest common denominator
+inChannelName: 00018143.in
+outChannelName: 00018143.out
+cmdChannelName: 00018143.cmd
+STARTING test_run_dir/fir.FIRWrapperSpec347336104/VFIRWrapper
+SEED 1481676096621
+Enabling waves..
+Exit Code: 0
+RAN 40 CYCLES PASSED
+[info] FIRWrapperSpec:
+[info] FIRWrapper
+[info] - should work with DspBlockTester
 [info] ScalaCheck
 [info] Passed: Total 0, Failed 0, Errors 0, Passed 0
 [info] ScalaTest
-[info] Run completed in 3 seconds, 294 milliseconds.
+[info] Run completed in 8 seconds, 799 milliseconds.
 [info] Total number of tests run: 1
 [info] Suites: completed 1, aborted 0
 [info] Tests: succeeded 1, failed 0, canceled 0, ignored 0, pending 0
 [info] All tests passed.
 [info] Passed: Total 1, Failed 0, Errors 0, Passed 1
-[success] Total time: 8 s, completed Jun 3, 2016 5:50:46 AM
+[success] Total time: 26 s, completed Dec 13, 2016 4:41:41 PM
 ```
 If you see the above then...
 ### It worked!

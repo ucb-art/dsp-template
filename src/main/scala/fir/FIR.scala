@@ -25,10 +25,15 @@ class FIR[T<:Data:Real]()(implicit val p: Parameters) extends Module with HasFIR
   io.out.sync := ShiftRegister(io.in.sync, latency)
   io.out.valid := ShiftRegister(io.in.valid, latency)
 
-  val products = io.taps.reverse.map { tap => io.in.bits.map { in => 
-    in * tap
-    //when (io.in.valid) { in * tap }
-    //.otherwise { Wire(implicitly[Real[T]].zero) }
+  // feed in zeros when invalid
+  val in = Wire(Vec(lanesIn, genIn()))
+  when (io.in.valid) {
+    in := io.in.bits
+  } .otherwise {
+    in := Wire(Vec(lanesIn, implicitly[Real[T]].zero))
+  }
+  val products: Seq[Seq[T]] = io.taps.reverse.map { tap => in.map { i => 
+    i * tap
   }}
 
   // rotates a Seq by i terms, wraps around and can be negative for reverse rotation
