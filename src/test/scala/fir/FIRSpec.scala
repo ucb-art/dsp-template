@@ -44,7 +44,7 @@ class FIRWrapperTester[T <: Data](c: FIRWrapper[T])(implicit p: Parameters) exte
 
   def doublesToBigInt(in: Array[Double]): BigInt = {
     in.reverse.foldLeft(BigInt(0)) {case (bi, dbl) =>
-      val new_bi = BigInt(java.lang.Double.doubleToLongBits(dbl))
+      val new_bi = doubleToBigIntBits(dbl)
       (bi << 64) + new_bi
     }
   }
@@ -53,7 +53,9 @@ class FIRWrapperTester[T <: Data](c: FIRWrapper[T])(implicit p: Parameters) exte
   // use Breeze FIR filter, but trim (it zero pads the input) and decimate output
   val expected_output = filter(DenseVector(rawStreamIn.flatten), DenseVector(filter_coeffs)).toArray.drop(config.numberOfTaps-2).dropRight(config.numberOfTaps-2).grouped(gk.lanesIn/gk.lanesOut).map(_.head).toArray
 
+  reset(5)
   pauseStream
+  step(10)
   //println("Addr Map:")
   //println(testchipip.SCRAddressMap("FIRWrapper").get.map(_.toString).toString)
   // assumes coefficients are first addresses
@@ -66,14 +68,14 @@ class FIRWrapperTester[T <: Data](c: FIRWrapper[T])(implicit p: Parameters) exte
     java.lang.Double.longBitsToDouble(y.toLong)
   }}}
 
-  //println("Input")
-  //println(rawStreamIn.flatten.deep.mkString(","))
-  //println("Coefficients")
-  //println(filter_coeffs.deep.mkString(","))
-  //println("Chisel Output")
-  //println(output.toArray.flatten.deep.mkString(","))
-  //println("Reference Output")
-  //println(expected_output.deep.mkString(","))
+  println("Input")
+  println(rawStreamIn.flatten.deep.mkString(","))
+  println("Coefficients")
+  println(filter_coeffs.deep.mkString(","))
+  println("Chisel Output")
+  println(output.toArray.flatten.deep.mkString(","))
+  println("Reference Output")
+  println(expected_output.deep.mkString(","))
 
   output.flatten.zip(expected_output).zipWithIndex.foreach { case((chisel, ref), index) => 
     if (chisel != ref) {

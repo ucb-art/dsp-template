@@ -57,8 +57,9 @@ class DspConfig extends Config(
         maxManagerXacts = 1,
         dataBeats = 8,
         dataBits = 64 * 8)
-    case DspBlockKey => DspBlockParameters(1024, 1024)
+    case DspBlockKey => DspBlockParameters(128, 128)
     case GenKey => new GenParameters {
+      //def getReal(): FixedPoint = FixedPoint(width = 32, binaryPoint = 16)
       def getReal(): DspReal = DspReal(0.0).cloneType
       def genIn [T <: Data] = getReal().asInstanceOf[T]
       override def genOut[T <: Data] = getReal().asInstanceOf[T]

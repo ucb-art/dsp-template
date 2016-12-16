@@ -8,6 +8,7 @@ import dsptools.numbers.{Real, DspComplex}
 import dsptools.numbers.implicits._
 import dsptools._
 import cde.Parameters
+import internal.firrtl.{Width, BinaryPoint}
 
 class FIRIO[T<:Data:Real]()(implicit val p: Parameters) extends Bundle with HasFIRGenParameters[T] {
   val config = p(FIRKey)(p)
@@ -60,9 +61,28 @@ class FIRWrapper[T<:Data:Real]()(implicit p: Parameters) extends GenDspBlock[T, 
   )
   addStatus("firStatus")
 
+  //// fixedpoint version:
+  //val in = Wire(ValidWithSync(Vec(lanesIn, genIn().cloneType)))
+  //in.valid := io.in.valid
+  //in.sync := io.in.sync
+  //val v = in.bits.map{case x => {
+  //  x := io.in.bits.asFixedPoint(x.asInstanceOf[FixedPoint].binaryPoint)
+  //  x
+  //}}
+  //fir.io.in := in
+  //val taps = Wire(Vec(config.numberOfTaps, genTap.getOrElse(genIn()).cloneType))
+  //val w = taps.zipWithIndex.map{case (x, i) => {
+  //  x := control(s"firCoeff$i")(x.getWidth-1,0).asFixedPoint(x.asInstanceOf[FixedPoint].binaryPoint)
+  //  x
+  //}}
+  //fir.io.taps := w
+
+  // floating point version:
   fir.io.in <> unpackInput(lanesIn, genIn())
-  val taps = Wire(Vec(config.numberOfTaps, genTap.getOrElse(genIn())))
-  val w = taps.zipWithIndex.map{case (x, i) => x.fromBits(control(s"firCoeff$i"))}
+  val taps = Wire(Vec(config.numberOfTaps, genTap.getOrElse(genIn()).cloneType))
+  val w = taps.zipWithIndex.map{case (x, i) => {
+    x.fromBits(control(s"firCoeff$i")(x.getWidth-1,0))
+  }}
   fir.io.taps := w
 
   unpackOutput(lanesOut, genOut()) <> fir.io.out
