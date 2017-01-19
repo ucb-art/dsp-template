@@ -1,7 +1,7 @@
 // See LICENSE for license details.
 package fir
 
-import dsptools.numbers.implicits._
+import diplomacy.{LazyModule, LazyModuleImp}
 import dsptools.Utilities._
 import dsptools.{DspContext, Grow}
 import spire.algebra.{Field, Ring}
@@ -35,7 +35,7 @@ import dsptools._
 
 object LocalTest extends Tag("edu.berkeley.tags.LocalTest")
 
-class FIRWrapperTester[T <: Data](c: FIRWrapper[T])(implicit p: Parameters) extends DspBlockTester(c)(p) {
+class FIRTester[T <: Data](c: FIRBlock[T])(implicit p: Parameters) extends DspBlockTester(c) {
   val config = p(FIRKey)(p)
   val gk = p(GenKey)
   val test_length = 10
@@ -53,10 +53,9 @@ class FIRWrapperTester[T <: Data](c: FIRWrapper[T])(implicit p: Parameters) exte
   reset(5)
 
   pauseStream
-  println("Addr Map:")
-  println(testchipip.SCRAddressMap("FIRWrapper").get.map(_.toString).toString)
   // assumes coefficients are first addresses
-  filter_coeffs.zipWithIndex.foreach { case(x, i) => axiWriteAs(i*8, x, gk.genIn) }
+  //filter_coeffs.zipWithIndex.foreach { case(x, i) => axiWriteAs(i*8, x, gk.genIn) }
+  filter_coeffs.zipWithIndex.foreach { case(x, i) => axiWriteAs(addrmap(s"firCoeff$i"), x, gk.genIn) }
   step(10)
   playStream
   step(test_length)
@@ -78,8 +77,8 @@ class FIRWrapperTester[T <: Data](c: FIRWrapper[T])(implicit p: Parameters) exte
   compareOutput(output, expected_output, 5e-2)
 }
 
-class FIRWrapperSpec extends FlatSpec with Matchers {
-  behavior of "FIRWrapper"
+class FIRSpec extends FlatSpec with Matchers {
+  behavior of "FIR"
   val manager = new TesterOptionsManager {
     testerOptions = TesterOptions(backendName = "firrtl", testerSeed = 7L)
     interpreterOptions = InterpreterOptions(setVerbose = false, writeVCD = true)
@@ -87,7 +86,12 @@ class FIRWrapperSpec extends FlatSpec with Matchers {
 
   it should "work with DspBlockTester" in {
     implicit val p: Parameters = Parameters.root(new DspConfig().toInstance)
-    val dut = () => new FIRWrapper[FixedPoint]()
-    chisel3.iotesters.Driver.execute(dut, manager) { c => new FIRWrapperTester(c) } should be (true)
+    //implicit object FixedTypeclass extends dsptools.numbers.FixedPointReal { 
+    //  override def fromDouble(x: Double): FixedPoint = {
+    //    FixedPoint.fromDouble(x, binaryPoint = p(FractionalBits))
+    //  }
+    //} 
+    val dut = () => LazyModule(new LazyFIRBlock[DspReal]).module
+    chisel3.iotesters.Driver.execute(dut, manager) { c => new FIRTester(c) } should be (true)
   }
 }

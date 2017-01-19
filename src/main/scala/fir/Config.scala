@@ -31,18 +31,28 @@ trait HasIPXACTParameters {
   def getIPXACTParameters: Map[String, String]
 }
 
+case object NumTaps extends Field[Int]
+case object PipelineDepth extends Field[Int]
+case object TotalWidth extends Field[Int]
+case object FractionalBits extends Field[Int]
+
 // create a new DSP Configuration
 class DspConfig extends Config(
   (pname, site, here) => pname match {
     case BuildDSP => q: Parameters => 
       implicit val p = q
-      new LazyFIRBlock[FixedPoint]
+      new LazyFIRBlock[DspReal]
     case FIRKey => { (q: Parameters) => { 
       implicit val p = q
-      FIRConfig[FixedPoint](numberOfTaps = 4, pipelineDepth = 0)
+      FIRConfig[DspReal](numberOfTaps = site(NumTaps), pipelineDepth = site(PipelineDepth))
     }}
 	  case NastiKey => NastiParameters(64, 32, 1)
+    case NumTaps => 8
+    case TotalWidth => 30
+    case FractionalBits => 24
+    case PipelineDepth => 0
     case PAddrBits => 32
+    case BaseAddr => 0
     case CacheBlockOffsetBits => 6
     case AmoAluOperandBits => 64
     case TLId => "FIR"
@@ -60,8 +70,8 @@ class DspConfig extends Config(
         dataBits = 64 * 8)
     case DspBlockKey => DspBlockParameters(128, 128)
     case GenKey => new GenParameters {
-      def getReal(): FixedPoint = FixedPoint(width = 16, binaryPoint = 8)
-      //def getReal(): DspReal = DspReal()//DspReal(0.0).cloneType
+      //def getReal(): FixedPoint = FixedPoint(width=site(TotalWidth), binaryPoint=site(FractionalBits)) 
+      def getReal(): DspReal = DspReal()//DspReal(0.0).cloneType
       def genIn [T <: Data] = getReal().asInstanceOf[T]
       override def genOut[T <: Data] = getReal().asInstanceOf[T]
       val lanesIn = 2
@@ -70,21 +80,27 @@ class DspConfig extends Config(
     case _ => throw new CDEMatchError
   }) with HasIPXACTParameters {
   def getIPXACTParameters: Map[String, String] = {
-    // Get unadulterated, top level parameters.
-    val parameterList = List[Field[_]](TLId, PAddrBits)
-    val parameterMap = parameterList.foldLeft(Map[String, String]()) { (m, s) => m(s.toString) = params(s).toString; m }
+    val parameterMap = Map[String, String]()
 
     // Conjure up some IPXACT synthsized parameters.
-    parameterMap ++= List(("InputLanes", params(GenKey).lanesIn.toString), ("OutputLanes", params(GenKey).lanesOut.toString))
-    parameterMap ++= List(("InputTotalBits", params(DspBlockKey).inputWidth.toString))
+    val gk = params(GenKey)
+    parameterMap ++= List(("NumberOfTaps", params(NumTaps).toString), ("InputLanes", gk.lanesIn.toString),
+      ("InputTotalBits", params(TotalWidth).toString), ("OutputLanes", gk.lanesOut.toString), ("OutputTotalBits", params(TotalWidth).toString),
+      ("OutputPartialBitReversed", "1"), ("PipelineDepth", params(PipelineDepth).toString))
 
-    parameterMap ++= List(("NumberOfTaps", params(FIRKey)(params).numberOfTaps.toString), ("PipelineDepth", params(FIRKey)(params).pipelineDepth.toString))
+    // add fractional bits if it's fixed point
+    // TODO: check if it's fixed point or not
+    parameterMap ++= List(("InputFractionalBits", params(FractionalBits).toString), 
+      ("OutputFractionalBits", params(FractionalBits).toString))
+
+    // tech stuff, TODO
+    parameterMap ++= List(("ClockRate", "100"), ("Technology", "TSMC16nm"))
 
     parameterMap
   }
 }
 
-case object FIRKey extends Field[(Parameters) => FIRConfig[FixedPoint]]
+case object FIRKey extends Field[(Parameters) => FIRConfig[DspReal]]
 
 trait HasFIRGenParameters[T <: Data] extends HasGenParameters[T, T] {
    def genTap: Option[T] = None
