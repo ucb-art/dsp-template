@@ -1,4 +1,4 @@
-DSP Project Template
+DSP Project Template [![Build Status](https://travis-ci.org/ucb-art/dsp-template.svg?branch=work)](https://travis-ci.org/ucb-art/dsp-template)
 =======================
 
 You've done the chisel [tutorials](https://github.com/ucb-bar/chisel-tutorial.git), and now you 

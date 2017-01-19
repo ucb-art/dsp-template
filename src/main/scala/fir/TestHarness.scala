@@ -4,6 +4,8 @@ import diplomacy.LazyModule
 import rocketchip._
 import testchipip._
 import chisel3._
+import dspjunctions._
+import dspblocks._
 import cde.Parameters
 
 class TestHarness(implicit val p: Parameters) extends Module {

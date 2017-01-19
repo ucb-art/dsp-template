@@ -2,12 +2,15 @@ package fir
 
 import chisel3.util._
 import chisel3._
-import dsptools.junctions._
+import dspjunctions._
+import dspblocks._
 import scala.math._
 import dsptools.numbers.{Real, DspComplex}
 import dsptools.numbers.implicits._
+import dsptools.counters._
 import dsptools._
 import cde.Parameters
+import internal.firrtl.{Width, BinaryPoint}
 
 class FIRIO[T<:Data:Real]()(implicit val p: Parameters) extends Bundle with HasFIRGenParameters[T] {
   val config = p(FIRKey)(p)
@@ -22,8 +25,8 @@ class FIR[T<:Data:Real]()(implicit val p: Parameters) extends Module with HasFIR
 
   // define the latency as the slowest output
   val latency = ceil(config.numberOfTaps/lanesIn).toInt + config.pipelineDepth
-  io.out.sync := ShiftRegister(io.in.sync, latency)
-  io.out.valid := ShiftRegister(io.in.valid, latency)
+  io.out.sync := ShiftRegisterWithReset(io.in.sync, latency, 0.U)
+  io.out.valid := ShiftRegisterWithReset(io.in.valid, latency, 0.U)
 
   // feed in zeros when invalid
   val in = Wire(Vec(lanesIn, genIn()))
@@ -48,23 +51,4 @@ class FIR[T<:Data:Real]()(implicit val p: Parameters) extends Module with HasFIR
 
   // all pipeline registers tacked onto end, hopefully synthesis tools handle correctly
   io.out.bits := ShiftRegister(Vec(last.grouped(lanesIn/lanesOut).map(_.head).toSeq), config.pipelineDepth)
-}
-
-class FIRWrapper[T<:Data:Real]()(implicit p: Parameters) extends GenDspBlock[T, T]()(p) with HasFIRGenParameters[T] {
-  val baseAddr = BigInt(0)
-  val fir = Module(new FIR[T])
-  val config = p(FIRKey)(p)
-
-  (0 until config.numberOfTaps).map( i =>
-    addControl(s"firCoeff$i", 0.U)
-  )
-  addStatus("firStatus")
-
-  fir.io.in <> unpackInput(lanesIn, genIn())
-  val taps = Wire(Vec(config.numberOfTaps, genTap.getOrElse(genIn())))
-  val w = taps.zipWithIndex.map{case (x, i) => x.fromBits(control(s"firCoeff$i"))}
-  fir.io.taps := w
-
-  unpackOutput(lanesOut, genOut()) <> fir.io.out
-  status("firStatus") := fir.io.out.sync
 }
