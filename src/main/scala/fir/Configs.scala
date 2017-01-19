@@ -34,11 +34,11 @@ class DspConfig extends Config(
   (pname, site, here) => pname match {
     case BuildDSP => { (q: Parameters) => {
       implicit val p = q
-      Module(new FIRWrapper[DspReal])
+      Module(new FIRWrapper[FixedPoint])
     }}
     case FIRKey => { (q: Parameters) => { 
       implicit val p = q
-      FIRConfig[DspReal](numberOfTaps = 4, pipelineDepth = 0)
+      FIRConfig[FixedPoint](numberOfTaps = 4, pipelineDepth = 0)
     }}
 	  case NastiKey => NastiParameters(64, 32, 1)
     case PAddrBits => 32
@@ -59,8 +59,8 @@ class DspConfig extends Config(
         dataBits = 64 * 8)
     case DspBlockKey => DspBlockParameters(128, 128)
     case GenKey => new GenParameters {
-      //def getReal(): FixedPoint = FixedPoint(width = 32, binaryPoint = 16)
-      def getReal(): DspReal = DspReal(0.0).cloneType
+      def getReal(): FixedPoint = FixedPoint(width = 16, binaryPoint = 8)
+      //def getReal(): DspReal = DspReal()//DspReal(0.0).cloneType
       def genIn [T <: Data] = getReal().asInstanceOf[T]
       override def genOut[T <: Data] = getReal().asInstanceOf[T]
       val lanesIn = 2
@@ -83,7 +83,7 @@ class DspConfig extends Config(
   }
 }
 
-case object FIRKey extends Field[(Parameters) => FIRConfig[DspReal]]
+case object FIRKey extends Field[(Parameters) => FIRConfig[FixedPoint]]
 
 trait HasFIRGenParameters[T <: Data] extends HasGenParameters[T, T] {
    def genTap: Option[T] = None

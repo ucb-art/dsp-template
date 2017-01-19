@@ -6,6 +6,7 @@ import dsptools.junctions._
 import scala.math._
 import dsptools.numbers.{Real, DspComplex}
 import dsptools.numbers.implicits._
+import dsptools.counters._
 import dsptools._
 import cde.Parameters
 import internal.firrtl.{Width, BinaryPoint}
@@ -23,8 +24,8 @@ class FIR[T<:Data:Real]()(implicit val p: Parameters) extends Module with HasFIR
 
   // define the latency as the slowest output
   val latency = ceil(config.numberOfTaps/lanesIn).toInt + config.pipelineDepth
-  io.out.sync := ShiftRegister(io.in.sync, latency)
-  io.out.valid := ShiftRegister(io.in.valid, latency)
+  io.out.sync := ShiftRegisterWithReset(io.in.sync, latency, 0.U)
+  io.out.valid := ShiftRegisterWithReset(io.in.valid, latency, 0.U)
 
   // feed in zeros when invalid
   val in = Wire(Vec(lanesIn, genIn()))
@@ -61,27 +62,11 @@ class FIRWrapper[T<:Data:Real]()(implicit p: Parameters) extends GenDspBlock[T, 
   )
   addStatus("firStatus")
 
-  //// fixedpoint version:
-  //val in = Wire(ValidWithSync(Vec(lanesIn, genIn().cloneType)))
-  //in.valid := io.in.valid
-  //in.sync := io.in.sync
-  //val v = in.bits.map{case x => {
-  //  x := io.in.bits.asFixedPoint(x.asInstanceOf[FixedPoint].binaryPoint)
-  //  x
-  //}}
-  //fir.io.in := in
-  //val taps = Wire(Vec(config.numberOfTaps, genTap.getOrElse(genIn()).cloneType))
-  //val w = taps.zipWithIndex.map{case (x, i) => {
-  //  x := control(s"firCoeff$i")(x.getWidth-1,0).asFixedPoint(x.asInstanceOf[FixedPoint].binaryPoint)
-  //  x
-  //}}
-  //fir.io.taps := w
-
   // floating point version:
   fir.io.in <> unpackInput(lanesIn, genIn())
   val taps = Wire(Vec(config.numberOfTaps, genTap.getOrElse(genIn()).cloneType))
   val w = taps.zipWithIndex.map{case (x, i) => {
-    x.fromBits(control(s"firCoeff$i")(x.getWidth-1,0))
+    x.fromBits(control(s"firCoeff$i"))
   }}
   fir.io.taps := w
 
