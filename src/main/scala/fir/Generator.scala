@@ -10,8 +10,9 @@ import java.math.BigInteger
 import rocketchip._
 import junctions._
 import cde.Parameters
-import dsptools.junctions._
 import dsptools._
+import dspjunctions._
+import dspblocks._
 
 class NastiConfig(implicit val p: Parameters) extends HasNastiParameters {}
 

@@ -13,6 +13,8 @@ import breeze.signal.support.CanFilter._
 import chisel3._
 import chisel3.util._
 import chisel3.iotesters._
+import dspjunctions._
+import dspblocks._
 import firrtl_interpreter.InterpreterOptions
 import dsptools.numbers.{DspReal, SIntOrder, SIntRing}
 import dsptools.{DspContext, DspTester, Grow}

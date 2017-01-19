@@ -15,6 +15,8 @@ import dsptools.numbers.{DspComplex, Real}
 import scala.util.Random
 import scala.math._
 import org.scalatest.Tag
+import dspjunctions._
+import dspblocks._
 
 import cde._
 import junctions._
@@ -32,10 +34,9 @@ trait HasIPXACTParameters {
 // create a new DSP Configuration
 class DspConfig extends Config(
   (pname, site, here) => pname match {
-    case BuildDSP => { (q: Parameters) => {
+    case BuildDSP => q: Parameters => 
       implicit val p = q
-      Module(new FIRWrapper[FixedPoint])
-    }}
+      new LazyFIRBlock[FixedPoint]
     case FIRKey => { (q: Parameters) => { 
       implicit val p = q
       FIRConfig[FixedPoint](numberOfTaps = 4, pipelineDepth = 0)
