@@ -27,7 +27,6 @@ import junctions._
 import uncore.tilelink._
 import uncore.coherence._
 
-
 object LocalTest extends Tag("edu.berkeley.tags.LocalTest")
 
 class FIRRealRealTester[T <: Data](dut: FIRBlockModule[T], input: Seq[Double], coeffs: Seq[Double], ref_output: Seq[Double], verbose: Boolean = false)(implicit p: Parameters) extends DspBlockTester(dut) {

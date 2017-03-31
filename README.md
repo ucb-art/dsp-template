@@ -1,22 +1,22 @@
-Filter [![Build Status](https://travis-ci.org/ucb-art/filter.svg?branch=master)](https://travis-ci.org/ucb-art/filter)
+DSP Template [![Build Status](https://travis-ci.org/ucb-art/dsp-template.svg?branch=master)](https://travis-ci.org/ucb-art/dsp-template)
 =======================
 
 # Overview
 
-This project contains a decimating FIR filter.
+This project contains a decimating FIR filter, which is a good template to base your own DSP block design on.
 
 # Usage
 
 ## GitHub Pages
 
-See [here](https://ucb-art.github.io/filter/latest/api/) for the GitHub pages scaladoc.
+See [here](https://ucb-art.github.io/dsp-template/latest/api/) for the GitHub pages scaladoc.
 
 ## Setup
 
 Clone the repository and update the depenedencies:
 
 ```
-git clone git@github.com:ucb-art/filter.git
+git clone git@github.com:ucb-art/dsp-template.git
 git submodule update --init
 cd dsp-framework
 ./update.bash

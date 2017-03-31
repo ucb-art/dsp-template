@@ -26,4 +26,3 @@ script:
   - cd dsp-framework; ./update.bash no_hwacha; cd ..; make libs
   - make verilog
   - make travis
-
